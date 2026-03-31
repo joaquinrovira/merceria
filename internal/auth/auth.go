@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"merceria/internal/config"
 	"net/http"
 	"os"
 	"strings"
@@ -39,22 +40,24 @@ func OauthConfig(location string) *oauth2.Config {
 
 type RequestAuthorizer func(*http.Request) *Authorizer
 
-func NewAuthorizerFactory(
-	AllowedUsers []string,
-	SessionSecret string,
-) RequestAuthorizer {
+func NewAuthorizerFactory(cfg *config.Config) RequestAuthorizer {
 	return func(r *http.Request) *Authorizer {
 		// Get source location for constructing RedirectURL
+
+		host := r.Host
 		scheme := "http"
 		if r.TLS != nil {
 			scheme = "https"
 		}
-		host := r.Host
+		if !cfg.Development { // TODO: fix this for production behind a reverse proxy
+			scheme = "https"
+		}
+
 		location := fmt.Sprintf("%s://%s", scheme, host)
 
 		return &Authorizer{
-			AllowedUsers:  AllowedUsers,
-			SessionSecret: SessionSecret,
+			AllowedUsers:  cfg.AllowedUsers,
+			SessionSecret: cfg.SessionSecret,
 			OauthConfig:   OauthConfig(location),
 		}
 	}

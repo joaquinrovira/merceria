@@ -53,7 +53,7 @@ func Run(ctx context.Context, grp *errgroup.Group) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	rauth := auth.NewAuthorizerFactory(cfg.AllowedUsers, cfg.SessionSecret)
+	rauth := auth.NewAuthorizerFactory(cfg)
 	spreadsheets, err := spreadsheets.New(ctx, cfg.ServiceAccount)
 	if err != nil {
 		return fmt.Errorf("failed to create spreadsheet operator: %w", err)
