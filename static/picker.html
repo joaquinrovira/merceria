@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Google Picker API Quickstart</title>
+    <meta charset="utf-8" />
+</head>
+
+<body>
+
+    <p>Hello, <strong>{{.Email}}</strong></p>
+
+    <button id="login_button" onclick="handleAuthClick()">Consent</button>
+    <button id="picker_button" onclick="createPicker()">Choose a File</button>
+
+    <form id="picker_form" method="POST" action="/pick" style="display: none;">
+        <legend>Archivo Seleccionado</legend>
+        <div class="form-group">
+            <label for="file-name">Archivo</label>
+            <input type="input" id="file-name" name="file-name" required />
+            <input type="hidden" id="file-id" name="file-id" required />
+        </div>
+        <button type="submit">Compartir</button>
+    </form>
+
+    <pre id="content" style="white-space: pre-wrap;"></pre>
+
+    <script type="text/javascript">
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+        const CLIENT_ID = '{{.ClientID}}';
+        const API_KEY = '{{.APIKey}}';
+        const APP_ID = '{{.APPId}}';
+
+        let tokenClient;
+        let accessToken = '{{js .Token}}' || null;
+        let pickerInited = false;
+        let gisInited = false;
+
+
+        document.getElementById('login_button').style.display = 'none';
+        document.getElementById('picker_button').style.display = 'none';
+
+        /**
+         * Callback after api.js is loaded.
+         */
+        function gapiLoaded() {
+            gapi.load('client:picker', initializePicker);
+        }
+
+        /**
+         * Callback after the API client is loaded. Loads the
+         * discovery doc to initialize the API.
+         */
+        async function initializePicker() {
+            await gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
+            pickerInited = true;
+            maybeEnableButtons();
+        }
+
+        /**
+         * Callback after Google Identity Services are loaded.
+         */
+        function gisLoaded() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: '', // defined later
+            });
+            gisInited = true;
+            maybeEnableButtons();
+        }
+
+
+        /**
+         * Enables user interaction after all libraries are loaded.
+         */
+        function maybeEnableButtons() {
+            if (!pickerInited || !gisInited) {
+                return;
+            }
+
+            if (accessToken !== null) {
+                document.getElementById('picker_button').style.display = null;
+            } else {
+                document.getElementById('login_button').style.display = null;
+            }
+        }
+
+        /**
+         *  Sign in the user upon button click.
+         */
+        function handleAuthClick() {
+            tokenClient.callback = async (response) => {
+                if (response.error !== undefined) {
+                    throw (response);
+                }
+                document.getElementById('login_button').style.display = 'none';
+                document.getElementById('picker_button').style.display = null;
+                accessToken = response.access_token;
+                await createPicker();
+            };
+
+            if (accessToken === null) {
+                // Prompt the user to select a Google Account and ask for consent to share their data
+                // when establishing a new session.
+                tokenClient.requestAccessToken({ prompt: 'consent' });
+            } else {
+                // Skip display of account chooser and consent dialog for an existing session.
+                tokenClient.requestAccessToken({ prompt: '' });
+            }
+        }
+
+        /**
+         *  Create and render a Google Picker object for searching images.
+         */
+        function createPicker() {
+            const currentOrigin = window.location.protocol + '//' + window.location.host;
+            const view = new google.picker.View(google.picker.ViewId.SPREADSHEETS);
+            view.setMimeTypes('image/png,image/jpeg,image/jpg');
+            const picker = new google.picker.PickerBuilder()
+                .enableFeature(google.picker.Feature.NAV_HIDDEN)
+                .enableFeature(google.picker.Feature.MINE_ONLY)
+                .setDeveloperKey(API_KEY)
+                .setAppId(APP_ID)
+                .setOAuthToken(accessToken)
+                .addView(view)
+                .addView(new google.picker.DocsUploadView())
+                .setCallback(pickerCallback)
+                .setOrigin(currentOrigin)
+                .build();
+            picker.setVisible(true);
+        }
+
+        /**
+         * Displays the file details of the user's selection.
+         * @param {object} data - Contains the user selection from the Google Picker.
+         */
+        async function pickerCallback(data) {
+            console.log(data);
+            if (data.action === google.picker.Action.PICKED) {
+                let text = `Google Picker response: \n${JSON.stringify(data, null, 2)}\n`;
+                const doc = data[google.picker.Response.DOCUMENTS][0];
+                const fileId = doc[google.picker.Document.ID];
+                const fileName = doc[google.picker.Document.NAME];
+
+
+                document.getElementById('file-name').value = fileName;
+                document.getElementById('file-id').value = fileId;
+                document.getElementById('picker_form').style.display = '';
+            }
+        }
+    </script>
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+</body>
+
+</html>

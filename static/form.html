@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Agregar Pedido</title>
+    <meta charset="utf-8" />
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        fieldset {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        legend {
+            font-weight: bold;
+            padding: 0 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 0.75rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Agregar Nuevo Pedido</h1>
+    <div id="message" class="message"></div>
+    <form method="POST" action="/form">
+        <fieldset>
+            <legend>Información del Pedido</legend>
+            <div class="form-group">
+                <label for="fecha">Fecha</label>
+                <input type="date" id="fecha" name="fecha" required />
+            </div>
+            <div class="form-group">
+                <label for="nombre">Nombre</label>
+                <input type="text" id="nombre" name="nombre" required />
+            </div>
+            <div class="form-group">
+                <label for="telefono">Teléfono</label>
+                <input type="text" id="telefono" name="telefono" />
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Detalles</legend>
+            <div class="form-group">
+                <label for="prendas">Nº Prendas</label>
+                <input type="number" id="prendas" name="prendas" min="0" value="1" required />
+            </div>
+            <div class="form-group">
+                <label for="notas">Notas</label>
+                <textarea id="notas" name="notas" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="grupo">Grupo</label>
+                <select id="grupo" name="grupo" required>
+                    <option value="Grupo 1" selected="selected">Grupo 1</option>
+                    <option value="Grupo 2">Grupo 2</option>
+                    <option value="Grupo 3">Grupo 3</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="estado">Estado</label>
+                <select id="estado" name="estado" required>
+                    <option value="FALSE" selected="selected">Pendiente</option>
+                    <option value="TRUE">Completado</option>
+                </select>
+            </div>
+        </fieldset>
+
+        <button type="submit">Registrar Pedido</button>
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form');
+            const messageDiv = document.getElementById('message');
+
+            document.getElementById('fecha').valueAsDate = new Date();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('success')) {
+                messageDiv.textContent = 'Pedido creado exitosamente';
+                messageDiv.className = 'message success';
+                messageDiv.style.display = 'block';
+            } else if (urlParams.has('error')) {
+                messageDiv.textContent = urlParams.get('error') || 'Error al crear el pedido';
+                messageDiv.className = 'message error';
+                messageDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+
+</html>
