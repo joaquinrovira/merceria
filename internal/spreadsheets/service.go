@@ -3,6 +3,7 @@ package spreadsheets
 import (
 	"context"
 	"fmt"
+	"log"
 	v0 "merceria/internal/spreadsheets/v0"
 	"merceria/internal/util/cache"
 	"time"
@@ -62,6 +63,7 @@ func (s *Service) GetOperator(sid string) (*v0.Operator, error) {
 	unsub := s.operators.OnEviction(func(ctx context.Context, er cache.EvictionReason, i *cache.Item[string, Operator]) {
 		if i.Key() == sid {
 			cancel()
+			log.Printf("Spreadsheet %s operator evicted", sid)
 		}
 	})
 

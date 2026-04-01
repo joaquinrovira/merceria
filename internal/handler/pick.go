@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"log"
 	"merceria/internal/auth"
 	"merceria/internal/middleware"
 	"merceria/internal/util"
@@ -51,6 +52,7 @@ func PickCallback(ctx context.Context, rauth auth.RequestAuthorizer) http.Handle
 		}
 
 		id := r.FormValue("file-id")
+		name := r.FormValue("file-name")
 		token := r.FormValue("token")
 
 		if id == "" {
@@ -78,6 +80,8 @@ func PickCallback(ctx context.Context, rauth auth.RequestAuthorizer) http.Handle
 			http.Error(w, "unauthorized: no session claims found", http.StatusUnauthorized)
 			return
 		}
+
+		log.Printf("User %s linked to spreadsheet %s (%s)", claims.Email, claims.SpreadsheetId, name)
 
 		newClaims := auth.SetSessionClaimsSpreadsheet(claims, id)
 		sessionToken, err := authr.CreateSessionToken(newClaims)
