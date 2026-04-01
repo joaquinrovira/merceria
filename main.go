@@ -70,7 +70,7 @@ func Run(ctx context.Context, grp *errgroup.Group) error {
 	mux.Handle("/~/", middleware.Apply(http.FileServerFS(static.FS()), mw, middleware.StripPrefix("/~/")))
 
 	mw = middleware.From(mw, middleware.CORS(cfg.CORSOrigins))
-	mux.Handle("GET /auth/logout", middleware.ApplyFunc(handler.LogoutHandler, mw))
+	mux.Handle("GET /auth/logout", middleware.ApplyFunc(handler.LogoutHandler(ctx, static), mw))
 	mux.Handle("GET /auth/google/login", middleware.ApplyFunc(handler.LoginHandler(rauth), mw))
 	mux.Handle("GET /auth/google/callback", middleware.ApplyFunc(handler.LoginCallbackHandler(rauth), mw))
 	if cfg.Development {

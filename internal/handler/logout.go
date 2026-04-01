@@ -1,18 +1,19 @@
 package handler
 
 import (
-	"encoding/json"
-	"merceria/internal/auth"
+	"context"
+	"merceria/internal/util"
 	"net/http"
+	"os"
+	"text/template"
 )
 
-// LogoutHandler clears the session cookie
-func LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	auth.ClearCookie(w, auth.SessionCookieName)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
-		"status":  "success",
-		"message": "Logged out successfully",
-	})
+func LogoutHandler(ctx context.Context, fs *os.Root) http.HandlerFunc {
+	const name = "logout.html"
+	data := ReloadingFile(ctx, fs, name)
+	return func(w http.ResponseWriter, r *http.Request) {
+		t := util.Must(template.New("").Parse(string(util.Must(data()))))
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		t.Execute(w, nil)
+	}
 }

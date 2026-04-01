@@ -5,17 +5,21 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . .
+COPY *.go ./
+COPY internal/ ./internal/
 
-RUN CGO_ENABLED=0 go build -o /server .
+RUN CGO_ENABLED=0 go build -ldflags "-s -w" -o /server .
+
+FROM backplane/upx:latest AS packer
+
+COPY --from=builder /server /tmp/server
+RUN upx --best --lzma -o /server /tmp/server
 
 FROM gcr.io/distroless/static:nonroot
 
-
 USER nonroot
-
 WORKDIR /app
-COPY --from=builder /server /app/server
+COPY --from=packer /server /app/server
 COPY /static /app/static
 
 EXPOSE 8080
