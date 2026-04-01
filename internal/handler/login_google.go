@@ -1,15 +1,12 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"merceria/internal/auth"
-	tokencache "merceria/internal/util/token_cache.go"
 	"net/http"
-	"time"
 )
 
 func LoginHandler(rauth auth.RequestAuthorizer) http.HandlerFunc {
@@ -18,8 +15,7 @@ func LoginHandler(rauth auth.RequestAuthorizer) http.HandlerFunc {
 	}
 }
 
-func LoginCallbackHandler(ctx context.Context, rauth auth.RequestAuthorizer, cache tokencache.Cache) http.HandlerFunc {
-	mainctx := ctx
+func LoginCallbackHandler(rauth auth.RequestAuthorizer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authr := rauth(r)
 
@@ -123,9 +119,6 @@ func LoginCallbackHandler(ctx context.Context, rauth auth.RequestAuthorizer, cac
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
-
-		// Register the token in the cache
-		cache.Set(claims.Subject, tokencache.NewToken(mainctx, token, authr.OauthConfig), 12*time.Hour)
 
 		// Set session cookie
 		sessionToken, err := authr.CreateSessionToken(claims)

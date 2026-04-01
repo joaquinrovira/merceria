@@ -19,4 +19,4 @@ COPY --from=builder /server /app/server
 COPY /static /app/static
 
 EXPOSE 8080
-CMD ["/server"]
+CMD ["/app/server"]

@@ -8,19 +8,18 @@ import (
 	"time"
 
 	"merceria/internal/auth"
-	tokencache "merceria/internal/util/token_cache.go"
 )
 
 type contextKey string
 
 const JwtClaims contextKey = "jwt_claims"
 
-func Auth(rauth auth.RequestAuthorizer, cache tokencache.Cache) func(next http.Handler) http.Handler {
+func Auth(rauth auth.RequestAuthorizer) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authr := rauth(r)
 
-			claims, err := checkCookie(authr, cache, w, r)
+			claims, err := checkCookie(authr, w, r)
 			if err == nil {
 				ctx := context.WithValue(r.Context(), JwtClaims, claims)
 				r = r.WithContext(ctx)
@@ -41,7 +40,7 @@ func Auth(rauth auth.RequestAuthorizer, cache tokencache.Cache) func(next http.H
 	}
 }
 
-func checkCookie(authr *auth.Authorizer, cache tokencache.Cache, w http.ResponseWriter, r *http.Request) (*auth.SessionClaims, error) {
+func checkCookie(authr *auth.Authorizer, w http.ResponseWriter, r *http.Request) (*auth.SessionClaims, error) {
 	sessionToken, err := auth.GetSessionCookie(r)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve session cookie: %w", err)
@@ -53,16 +52,6 @@ func checkCookie(authr *auth.Authorizer, cache tokencache.Cache, w http.Response
 	claims, err := authr.ValidateSessionToken(sessionToken)
 	if err != nil {
 		return nil, fmt.Errorf("invalid token: %w", err)
-	}
-
-	if !claims.Dev {
-		authToken := cache.Get(claims.Subject)
-		if authToken == nil {
-			return nil, fmt.Errorf("no token found in cache for user %s", claims.Email)
-		}
-		if _, err := authToken.Value().Token(); err != nil {
-			return nil, fmt.Errorf("invalid token in cache for user %s: %w", claims.Email, err)
-		}
 	}
 
 	// Refresh session JWT if past threshold to extend session duration

@@ -6,7 +6,6 @@ import (
 	"merceria/internal/auth"
 	"merceria/internal/middleware"
 	"merceria/internal/util"
-	tokencache "merceria/internal/util/token_cache.go"
 	"net/http"
 	"os"
 	"text/template"
@@ -16,7 +15,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-func PickHandler(ctx context.Context, rauth auth.RequestAuthorizer, fs *os.Root, apiKey string, tokenCache tokencache.Cache) http.HandlerFunc {
+func PickHandler(ctx context.Context, rauth auth.RequestAuthorizer, fs *os.Root, apiKey string) http.HandlerFunc {
 	const name = "picker.html"
 	data := ReloadingFile(ctx, fs, name)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -42,20 +41,12 @@ func PickHandler(ctx context.Context, rauth auth.RequestAuthorizer, fs *os.Root,
 			"Token":    "",
 		}
 
-		cached := tokenCache.Get(claims.Subject)
-		if cached != nil {
-			tok, err := cached.Value().Token()
-			if err == nil {
-				m["Token"] = tok.AccessToken
-			}
-		}
-
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		t.Execute(w, m)
 	}
 }
 
-func PickCallback(ctx context.Context, rauth auth.RequestAuthorizer, tokenCache tokencache.Cache) http.HandlerFunc {
+func PickCallback(ctx context.Context, rauth auth.RequestAuthorizer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authr := rauth(r)
 
@@ -67,15 +58,13 @@ func PickCallback(ctx context.Context, rauth auth.RequestAuthorizer, tokenCache 
 
 		id := r.FormValue("file-id")
 		name := r.FormValue("file-name")
+		token := r.FormValue("token")
 
 		if id == "" {
 			http.Error(w, "spreadsheet_id is required", http.StatusBadRequest)
 			return
 		}
 
-		sessionToken := util.Must(auth.GetSessionCookie(r))
-		claims := util.Must(authr.ValidateSessionToken(sessionToken))
-		token := util.Must(tokenCache.Get(claims.Subject).Value().Token()).AccessToken
 		d, err := drive.NewService(ctx, option.WithTokenSource(oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})))
 		if err != nil {
 			http.Error(w, "failed to create drive service: "+err.Error(), http.StatusInternalServerError)
@@ -98,7 +87,7 @@ func PickCallback(ctx context.Context, rauth auth.RequestAuthorizer, tokenCache 
 		}
 
 		newClaims := auth.SetSessionClaimsSpreadsheet(claims, id)
-		sessionToken, err = authr.CreateSessionToken(newClaims)
+		sessionToken, err := authr.CreateSessionToken(newClaims)
 		if err != nil {
 			http.Error(w, "failed to create session token with spreadsheet id: "+err.Error(), http.StatusInternalServerError)
 			return

@@ -17,8 +17,9 @@
         <legend>Archivo Seleccionado</legend>
         <div class="form-group">
             <label for="file-name">Archivo</label>
-            <input type="input" id="file-name" name="file-name" required />
+            <input type="input" id="file-name" name="file-name" required readonly />
             <input type="hidden" id="file-id" name="file-id" required />
+            <input type="hidden" id="token" name="token" required />
         </div>
         <button type="submit">Compartir</button>
     </form>
@@ -26,7 +27,7 @@
     <pre id="content" style="white-space: pre-wrap;"></pre>
 
     <script type="text/javascript">
-        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly';
         const CLIENT_ID = '{{.ClientID}}';
         const API_KEY = '{{.APIKey}}';
         const APP_ID = '{{.APPId}}';
@@ -94,9 +95,10 @@
                 if (response.error !== undefined) {
                     throw (response);
                 }
+                accessToken = response.access_token;
+                document.getElementById('token').value = accessToken;
                 document.getElementById('login_button').style.display = 'none';
                 document.getElementById('picker_button').style.display = null;
-                accessToken = response.access_token;
                 await createPicker();
             };
 
