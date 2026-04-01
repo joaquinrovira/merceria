@@ -19,23 +19,29 @@
             font-family: 'Outfit', sans-serif;
         }
 
-        ::-webkit-scrollbar {
-            width: 8px;
+        .message-wrapper {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.5s ease-in-out, margin 0.5s ease-in-out;
         }
 
-        ::-webkit-scrollbar-track {
-            background: transparent;
+        .message-wrapper.open {
+            grid-template-rows: 1fr;
+            margin-bottom: 1.5rem;
         }
 
-        ::-webkit-scrollbar-thumb {
-            background: #64748b;
-            border-radius: 10px;
+        .inner-collapsible {
+            overflow: hidden;
         }
 
-        /* Smooth fade for the message dismissal */
-        .fade-out {
+        #message {
+            transition: opacity 0.4s ease-out;
+            opacity: 1;
+            margin-bottom: 0;
+        }
+
+        #message.fade-out {
             opacity: 0;
-            transition: opacity 0.5s ease-out;
         }
     </style>
 </head>
@@ -85,7 +91,11 @@
             </div>
         </div>
 
-        <div id="message" class="hidden mb-6 p-4 rounded-xl text-sm font-medium border animate-pulse"></div>
+        <div id="message-wrapper" class="message-wrapper">
+            <div class="inner-collapsible">
+                <div id="message" class="p-4 rounded-xl text-sm font-medium border"></div>
+            </div>
+        </div>
 
         <form method="POST" action="/form" class="space-y-8 relative z-10">
             <div class="space-y-5">
@@ -181,35 +191,44 @@
         </form>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Set default date
+    <script>document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('fecha').valueAsDate = new Date();
 
             const messageDiv = document.getElementById('message');
+            const wrapper = document.getElementById('message-wrapper');
             const urlParams = new URLSearchParams(window.location.search);
 
             if (urlParams.has('success') || urlParams.has('error')) {
+                // 1. Set Content
                 if (urlParams.has('success')) {
                     messageDiv.textContent = '¡Pedido guardado correctamente! ✨';
-                    messageDiv.classList.add('bg-emerald-500/10', 'text-emerald-500', 'border-emerald-500/20');
+                    messageDiv.classList.add('bg-emerald-500/10', 'text-emerald-500', 'border-emerald-500/20', 'animate-pulse');
                 } else {
-                    messageDiv.textContent = urlParams.get('error') || 'Hubo un error al procesar el pedido.';
+                    messageDiv.textContent = urlParams.get('error') || 'Hubo un error.';
                     messageDiv.classList.add('bg-red-500/10', 'text-red-500', 'border-red-500/20');
                 }
 
-                messageDiv.classList.remove('hidden');
-            }
-            if (urlParams.has('success')) {
-                // Auto-hide message after 5 seconds
-                setTimeout(() => {
-                    messageDiv.classList.add('fade-out');
+                // 2. Open the wrapper (Smooth Height Slide)
+                wrapper.classList.add('open');
+
+                // 3. Start Dismissal Timer
+                if (urlParams.has('success')) {
                     setTimeout(() => {
-                        messageDiv.classList.add('hidden');
-                        // Clean URL to prevent message reappearing on refresh
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    }, 500);
-                }, 5000);
+                        messageDiv.classList.remove('animate-pulse');
+                        messageDiv.classList.add('fade-out'); // Start opacity fade
+
+                        // Wait a moment for the fade, then slide the height up
+                        setTimeout(() => {
+                            wrapper.classList.remove('open'); // Smooth Height Collapse
+
+                            // Final cleanup after all animations finish
+                            setTimeout(() => {
+                                const cleanUrl = window.location.origin + window.location.pathname;
+                                window.history.replaceState({}, document.title, cleanUrl);
+                            }, 500);
+                        }, 300);
+                    }, 5000);
+                }
             }
         });
     </script>
