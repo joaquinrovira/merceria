@@ -64,12 +64,12 @@ func Run(ctx context.Context, grp *errgroup.Group) error {
 	}
 
 	mux := http.NewServeMux()
-	mw := middleware.From(middleware.Logging, middleware.Recover())
-	mux.Handle("GET /health", middleware.ApplyFunc(handler.Health, mw))
-	mux.Handle("/", middleware.Apply(http.RedirectHandler("/form", http.StatusFound), mw))
+	mw := middleware.From(middleware.Logging, middleware.Recover(), middleware.CORS(cfg.CORSOrigins))
 	mux.Handle("/~/", middleware.Apply(http.FileServerFS(static.FS()), mw, middleware.StripPrefix("/~/")))
 
-	mw = middleware.From(mw, middleware.CORS(cfg.CORSOrigins))
+	mw = middleware.From(mw, middleware.RateLimit(2, 8))
+	mux.Handle("/", middleware.Apply(http.RedirectHandler("/form", http.StatusFound), mw))
+	mux.Handle("GET /health", middleware.ApplyFunc(handler.Health, mw))
 	mux.Handle("GET /auth/logout", middleware.ApplyFunc(handler.LogoutHandler(ctx, static), mw))
 	mux.Handle("GET /auth/google/login", middleware.ApplyFunc(handler.LoginHandler(rauth), mw))
 	mux.Handle("GET /auth/google/callback", middleware.ApplyFunc(handler.LoginCallbackHandler(rauth), mw))
