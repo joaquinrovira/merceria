@@ -42,7 +42,6 @@ func SetSessionCookie(w http.ResponseWriter, sessionToken string) {
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
-		Expires:  time.Now().Add(24 * time.Hour),
 	}
 	http.SetCookie(w, cookie)
 }

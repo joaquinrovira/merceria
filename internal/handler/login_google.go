@@ -97,21 +97,21 @@ func LoginCallbackHandler(rauth auth.RequestAuthorizer) http.HandlerFunc {
 		// Optional:
 		// Extract spreadsheet ID from cookie if it exists and include in new session token
 		err = func() error {
-			prev, err := auth.GetSessionCookie(r)
+			token, err := auth.GetSessionCookie(r)
 			if err != nil && !errors.Is(err, http.ErrNoCookie) {
 				return fmt.Errorf("failed to retrieve session cookie: %w", err)
 			}
-			if prev == "" {
+			if token == "" {
 				return nil
 			}
-			claims, err := authr.ValidateSessionToken(prev)
+			prev, err := authr.DecodeSessionToken(token, false)
 			if err != nil {
 				return nil
 			}
-			if claims.SpreadsheetId == "" {
+			if prev.SpreadsheetId == "" {
 				return nil
 			}
-			claims = auth.SetSessionClaimsSpreadsheet(claims, claims.SpreadsheetId)
+			claims = auth.SetSessionClaimsSpreadsheet(claims, prev.SpreadsheetId)
 			return nil
 		}()
 		if err != nil {

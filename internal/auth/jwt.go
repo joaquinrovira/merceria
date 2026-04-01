@@ -3,15 +3,14 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"slices"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
-	TokenTTL         = 28 * time.Hour
-	RefreshThreshold = 12 * time.Hour
+	TokenTTL               = 48 * time.Hour
+	RefreshBeforeRemaining = 24 * time.Hour
 )
 
 type SessionClaims struct {
@@ -42,16 +41,10 @@ func SetSessionClaimsSpreadsheet(claims *SessionClaims, id string) *SessionClaim
 
 func RefreshSessionClaims(claims *SessionClaims) *SessionClaims {
 	now := time.Now()
-	next := &SessionClaims{
-		Email: claims.Email,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   claims.Subject,
-			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(TokenTTL)),
-			Audience:  slices.Clone(claims.Audience),
-		},
-	}
-	return next
+	next := *claims
+	next.IssuedAt = jwt.NewNumericDate(now)
+	next.ExpiresAt = jwt.NewNumericDate(now.Add(TokenTTL))
+	return &next
 }
 
 func (a *Authorizer) CreateSessionToken(claims *SessionClaims) (string, error) {
@@ -65,17 +58,32 @@ func (a *Authorizer) CreateSessionToken(claims *SessionClaims) (string, error) {
 }
 
 func (a *Authorizer) ValidateSessionToken(tokenString string) (*SessionClaims, error) {
+	return a.DecodeSessionToken(tokenString, true)
+}
+
+func (a *Authorizer) DecodeSessionToken(tokenString string, strict bool) (*SessionClaims, error) {
+	opts := []jwt.ParserOption{}
+	if !strict {
+		opts = append(opts, jwt.WithoutClaimsValidation())
+	}
+
 	token, err := jwt.ParseWithClaims(tokenString, &SessionClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
 		return []byte(a.SessionSecret), nil
-	})
+	}, opts...)
+	if !strict && errors.Is(err, jwt.ErrTokenExpired) {
+		err = nil // ignore expiration error if not strict
+	}
 	if err != nil {
 		return nil, fmt.Errorf("parsing token: %w", err)
 	}
 	claims, ok := token.Claims.(*SessionClaims)
-	if !ok || !token.Valid {
+	if !ok {
+		return nil, errors.New("invalid token claims type")
+	}
+	if strict && !token.Valid {
 		return nil, fmt.Errorf("invalid token")
 	}
 	return claims, nil

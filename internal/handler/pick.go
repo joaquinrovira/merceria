@@ -20,15 +20,10 @@ func PickHandler(ctx context.Context, rauth auth.RequestAuthorizer, fs *os.Root,
 	data := ReloadingFile(ctx, fs, name)
 	return func(w http.ResponseWriter, r *http.Request) {
 		authr := rauth(r)
-		sessionToken, err := auth.GetSessionCookie(r)
-		if err != nil || sessionToken == "" {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-			return
-		}
 
-		claims, err := authr.ValidateSessionToken(sessionToken)
-		if err != nil {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
+		claims, ok := r.Context().Value(middleware.JwtClaims).(*auth.SessionClaims)
+		if !ok || claims == nil {
+			http.Error(w, "unauthorized: no session claims found", http.StatusUnauthorized)
 			return
 		}
 

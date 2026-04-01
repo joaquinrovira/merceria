@@ -54,14 +54,14 @@ func checkCookie(authr *auth.Authorizer, w http.ResponseWriter, r *http.Request)
 		return nil, fmt.Errorf("invalid token: %w", err)
 	}
 
-	// Refresh session JWT if past threshold to extend session duration
-	shouldRefresh := claims.IssuedAt != nil && time.Since(claims.IssuedAt.Time) > auth.RefreshThreshold
+	shouldRefresh := claims.IssuedAt != nil && time.Until(claims.ExpiresAt.Time) < auth.RefreshBeforeRemaining
 	if shouldRefresh {
-		newToken, err := authr.CreateSessionToken(claims)
+		refreshed := auth.RefreshSessionClaims(claims)
+		token, err := authr.CreateSessionToken(refreshed)
 		if err != nil {
 			log.Printf("ERROR: failed to refresh session token for user %s: %v", claims.Email, err)
 		} else {
-			auth.SetSessionCookie(w, newToken)
+			auth.SetSessionCookie(w, token)
 		}
 	}
 
