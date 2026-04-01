@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"merceria/internal/auth"
 	"merceria/internal/middleware"
 	"merceria/internal/util"
@@ -52,7 +51,6 @@ func PickCallback(ctx context.Context, rauth auth.RequestAuthorizer) http.Handle
 		}
 
 		id := r.FormValue("file-id")
-		name := r.FormValue("file-name")
 		token := r.FormValue("token")
 
 		if id == "" {
@@ -98,12 +96,6 @@ func PickCallback(ctx context.Context, rauth auth.RequestAuthorizer) http.Handle
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{
-			"status":           "ok",
-			"spreadsheet_id":   id,
-			"spreadsheet_name": name,
-		})
+		http.Redirect(w, r, "/", http.StatusFound)
 	}
 }
