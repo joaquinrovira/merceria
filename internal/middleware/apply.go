@@ -20,5 +20,5 @@ func Apply(handler http.Handler, middlewares ...func(http.Handler) http.Handler)
 }
 
 func ApplyFunc(handler http.HandlerFunc, middlewares ...func(http.Handler) http.Handler) http.Handler {
-	return From(middlewares...)(handler)
+	return Apply(handler, middlewares...)
 }

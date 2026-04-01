@@ -66,7 +66,8 @@ func Run(ctx context.Context, grp *errgroup.Group) error {
 	mux := http.NewServeMux()
 	mw := middleware.From(middleware.Logging, middleware.Recover())
 	mux.Handle("GET /health", middleware.ApplyFunc(handler.Health, mw))
-	mux.Handle("/", middleware.ApplyFunc(handler.NotFound(static), mw))
+	mux.Handle("/", middleware.Apply(http.RedirectHandler("/form", http.StatusFound), mw))
+	mux.Handle("/~/", middleware.Apply(http.FileServerFS(static.FS()), mw, middleware.StripPrefix("/~/")))
 
 	mw = middleware.From(mw, middleware.CORS(cfg.CORSOrigins))
 	mux.Handle("GET /auth/logout", middleware.ApplyFunc(handler.LogoutHandler, mw))
