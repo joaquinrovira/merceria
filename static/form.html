@@ -98,8 +98,9 @@
         </div>
 
         <form method="POST" action="/form" class="space-y-8 relative z-10">
-            <div id="entries-container" class="space-y-6 relative z-10">
-            </div>
+            <div id="entries-container" class="space-y-6 relative z-10"></div>
+            <input type="hidden" name="nonce" id="nonce" />
+
 
             <button type="button" id="add-entry-btn" class="w-full mt-6 py-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl text-slate-500 hover:border-emerald-500 hover:text-emerald-600 transition-colors font-medium flex items-center justify-center gap-2 group">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:scale-110 transition-transform">
@@ -123,6 +124,9 @@
             const messageDiv = document.getElementById('message');
             const wrapper = document.getElementById('message-wrapper');
             const urlParams = new URLSearchParams(window.location.search);
+
+            const nonceField = document.getElementById('nonce');
+            nonceField.value = crypto.randomUUID();
 
             if (urlParams.has('success') || urlParams.has('error')) {
                 // 1. Set Content
