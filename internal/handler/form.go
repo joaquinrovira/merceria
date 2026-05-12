@@ -16,6 +16,7 @@ import (
 	"merceria/internal/model"
 	"merceria/internal/spreadsheets"
 	"merceria/internal/util"
+	"merceria/internal/util/cache"
 )
 
 func extractIndexAndField(key string) (indexStr, fieldName string, ok bool) {
@@ -188,8 +189,11 @@ func CreateRowForm(ctx context.Context, fs *os.Root) http.HandlerFunc {
 }
 
 func CreateRow(svc *spreadsheets.Service) http.HandlerFunc {
+	nonces := cache.New(
+		cache.WithCapacity[string, bool](100),
+		cache.WithTTL[string, bool](1*time.Minute),
+	)
 
-	// TODO: Deduplicate requests by FORM key
 	return func(w http.ResponseWriter, r *http.Request) {
 		FormError := func(msg string) {
 			http.Redirect(w, r, "/form?error="+url.QueryEscape(msg), http.StatusSeeOther)
@@ -200,6 +204,12 @@ func CreateRow(svc *spreadsheets.Service) http.HandlerFunc {
 
 		if err := r.ParseForm(); err != nil {
 			http.Error(w, "invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		nonce := r.FormValue("nonce")
+		if nonces.Has(nonce) {
+			FormError("Duplicate submission detected. Please try again.")
 			return
 		}
 
@@ -216,9 +226,9 @@ func CreateRow(svc *spreadsheets.Service) http.HandlerFunc {
 			http.Error(w, "failed to create row", http.StatusInternalServerError)
 			return
 		}
+		nonces.Set(nonce, true, cache.DefaultTTL)
 
 		location := r.URL.RequestURI()
 		http.Redirect(w, r, location+"?success=true", http.StatusFound)
 	}
-
 }

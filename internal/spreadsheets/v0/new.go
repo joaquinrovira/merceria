@@ -158,6 +158,7 @@ func (i *Instance) append(ctx context.Context, rows []model.Row) error {
 
 func (i *Instance) prepend(ctx context.Context, rows []model.Row) error {
 	data := util.Map(rows, ToSpreadsheetValues2)
+	slices.Reverse(data)
 
 	update := &sheets.BatchUpdateSpreadsheetRequest{Requests: []*sheets.Request{}}
 
