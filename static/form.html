@@ -98,90 +98,17 @@
         </div>
 
         <form method="POST" action="/form" class="space-y-8 relative z-10">
-            <div class="space-y-5">
-                <h3 class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-500 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    Información del Cliente
-                </h3>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div class="space-y-2">
-                        <label for="fecha" class="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Fecha de Recepción</label>
-                        <input type="date" id="fecha" name="fecha" required class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
-                    </div>
-                    <div class="space-y-2">
-                        <label for="nombre" class="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Nombre Completo</label>
-                        <input type="text" id="nombre" name="nombre" placeholder="Nombre del cliente" required class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
-                    </div>
-                    <div class="md:col-span-2 space-y-2">
-                        <label for="telefono" class="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Teléfono de Contacto</label>
-                        <input type="text" id="telefono" name="telefono" placeholder="+34 000 000 000" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
-                    </div>
-                </div>
+            <div id="entries-container" class="space-y-6 relative z-10">
             </div>
 
-            <div class="space-y-5">
-                <h3 class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-500 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                        <rect width="18" height="18" x="3" y="3" rx="2" />
-                        <path d="M3 9h18" />
-                        <path d="M9 21V9" />
-                    </svg>
-                    Detalles del Pedido
-                </h3>
+            <button type="button" id="add-entry-btn" class="w-full mt-6 py-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl text-slate-500 hover:border-emerald-500 hover:text-emerald-600 transition-colors font-medium flex items-center justify-center gap-2 group">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:scale-110 transition-transform">
+                    <path d="M12 5v14M5 12h14" />
+                </svg>
+                Añadir otro pedido
+            </button>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    <div class="space-y-2">
-                        <label for="prendas" class="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Nº Prendas</label>
-                        <input type="number" id="prendas" name="prendas" min="1" value="1" required class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none" />
-                    </div>
-                    <div class="space-y-2">
-                        <label for="grupo" class="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Grupo</label>
-                        <div class="relative">
-                            <select id="grupo" name="grupo" required class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none appearance-none">
-                                <option value="Grupo 1" selected>Grupo 1</option>
-                                <option value="Grupo 2">Grupo 2</option>
-                                <option value="Grupo 3">Grupo 3</option>
-                            </select>
-                            <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label for="estado" class="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Estado</label>
-                        <div class="relative">
-                            <select id="estado" name="estado" required class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none appearance-none">
-                                <option value="FALSE" selected>🟡 Pendiente</option>
-                                <option value="TRUE">🟢 Completado</option>
-                            </select>
-                            <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    <label for="notas" class="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Notas</label>
-                    <div class="relative">
-                        <textarea id="notas" name="notas" rows="3" placeholder="Instrucciones especiales o detalles adicionales..." class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-emerald-500 transition-all outline-none resize-none"></textarea>
-                        <div class="absolute bottom-3 right-3 text-slate-600 pointer-events-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <button type="submit" class="w-full inline-flex justify-center items-center gap-3 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-emerald-900/20 dark:shadow-emerald-900/40 group">
+            <button type="submit" class="w-full inline-flex justify-center items-center gap-3 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-colors shadow-lg shadow-emerald-900/20 dark:shadow-emerald-900/40 group">
                 <span>Finalizar Registro</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform">
                     <path d="M5 12h14" />
@@ -191,9 +118,8 @@
         </form>
     </div>
 
-    <script>document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById('fecha').valueAsDate = new Date();
-
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
             const messageDiv = document.getElementById('message');
             const wrapper = document.getElementById('message-wrapper');
             const urlParams = new URLSearchParams(window.location.search);
@@ -232,6 +158,190 @@
             }
         });
     </script>
+    <script>
+        /**
+         * DYNAMIC FORM CONTROLLER to manage a list of order entries.
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('entries-container');
+            const template = document.getElementById('entry-template');
+            const addBtn = document.getElementById('add-entry-btn');
+
+            /** 
+             * Updates all entry attributes to maintain data[n] structure.
+             * Ensures indices are sequential after additions or removals.
+             */
+            const reindexEntries = () => {
+                const entries = [...container.querySelectorAll('.entry-item')];
+                entries.forEach((entry, i) => {
+                    // Update UI Labels
+                    entry.querySelectorAll('.entry-index').forEach(el => el.textContent = `${i + 1}`);
+
+                    // Map names to data[n][field]
+                    entry.querySelectorAll('input, select, textarea').forEach(field => {
+                        // Extract base field name by removing existing data[n]@ prefix if present
+                        const baseFieldName = field.name.replace(/^data\[\d+\]@/, '');
+                        field.name = `data[${i}]@${baseFieldName}`;
+                        field.id = `field_${i}_${baseFieldName}`;
+                    });
+                });
+            };
+
+            /** 
+             * Adds a new entry.
+             * Logic: Copies date from previous sibling or defaults to today.
+             */
+            const addEntry = () => {
+                const clone = template.content.cloneNode(true);
+                const newEntry = clone.querySelector('.entry-item');
+                const dateField = newEntry.querySelector('input[type="date"]');
+
+                // Date Inheritance Logic
+                const lastEntry = container.lastElementChild;
+                const lastDate = lastEntry?.querySelector('input[type="date"]')?.value;
+
+                if (lastDate) {
+                    dateField.value = lastDate;
+                } else {
+                    dateField.valueAsDate = new Date();
+                }
+
+                container.appendChild(newEntry);
+                reindexEntries();
+
+                // Auto-scroll to new item
+                newEntry.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
+
+            /** Removes entry with a scale-down animation. */
+            const removeEntry = (element) => {
+                if (container.children.length <= 1) return; // Keep at least one
+                element.style.transform = 'scale(0.95)';
+                element.style.opacity = '0';
+                setTimeout(() => {
+                    element.remove();
+                    reindexEntries();
+                }, 200);
+            };
+
+            /** Toggles accordion state. */
+            const toggleCollapse = (header) => {
+                const content = header.nextElementSibling;
+                const chevron = header.querySelector('.chevron');
+                const isOpen = !content.classList.contains('hidden');
+
+                content.classList.toggle('hidden');
+                chevron.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
+            };
+
+            // --- EVENT DELEGATION ---
+            container.addEventListener('click', (e) => {
+                const entryItem = e.target.closest('.entry-item');
+                if (!entryItem) return;
+
+                if (e.target.closest('.remove-btn')) {
+                    removeEntry(entryItem);
+                } else if (e.target.closest('.entry-header')) {
+                    toggleCollapse(entryItem.querySelector('.entry-header'));
+                }
+            });
+
+            addBtn.addEventListener('click', addEntry);
+
+            // Initial State: Start with one entry
+            addEntry();
+        });
+    </script>
+
+    <template id="entry-template">
+        <div class="entry-item group relative bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-1 transition-[box-shadow] hover:shadow-md">
+            <details open class="group">
+                <summary class="list-none cursor-pointer p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
+                            #<span class="entry-index">1</span>
+                        </div>
+                        <h2 class="font-semibold text-slate-800 dark:text-slate-100">Pedido</h2>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="remove-btn p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Eliminar pedido">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            </svg>
+                        </button>
+                        <div class="chevron p-1 text-slate-400 transition-transform duration-200 group-open:rotate-180">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m6 9 6 6 6-6" />
+                            </svg>
+                        </div>
+                    </div>
+                </summary>
+
+                <div class="px-5 pb-6 pt-2 space-y-8">
+                    <div class="space-y-4">
+                        <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                            Datos del Cliente
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">Fecha</label>
+                                <input type="date" name="fecha" required class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-[box-shadow]" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">Nombre</label>
+                                <input type="text" name="nombre" placeholder="Nombre completo" required class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-[box-shadow]" />
+                            </div>
+                            <div class="md:col-span-2 space-y-1.5">
+                                <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">Teléfono</label>
+                                <input type="text" name="telefono" placeholder="+34 000 000 000" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-[box-shadow]" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="3" rx="2" />
+                                <path d="M3 9h18M9 21V9" />
+                            </svg>
+                            Detalles
+                        </h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">Prendas</label>
+                                <input type="number" name="prendas" min="1" value="1" required class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 transition-[box-shadow] outline-none" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">Grupo</label>
+                                <select name="grupo" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 transition-[box-shadow] outline-none">
+                                    <option>Grupo 1</option>
+                                    <option>Grupo 2</option>
+                                    <option>Grupo 3</option>
+                                </select>
+                            </div>
+                            <div class="col-span-2 sm:col-span-1 space-y-1.5">
+                                <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">Estado</label>
+                                <select name="estado" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 transition-[box-shadow] outline-none">
+                                    <option value="FALSE">🟡 Pendiente</option>
+                                    <option value="TRUE">🟢 Completado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">Notas</label>
+                            <textarea name="notas" rows="2" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-[box-shadow] resize-y"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </template>
+
 </body>
 
 </html>

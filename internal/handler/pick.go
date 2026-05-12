@@ -17,7 +17,7 @@ import (
 
 func PickHandler(ctx context.Context, rauth auth.RequestAuthorizer, fs *os.Root, apiKey string) http.HandlerFunc {
 	const name = "picker.html"
-	data := ReloadingFile(ctx, fs, name)
+	data := util.ReloadingFile(ctx, fs, name)
 	return func(w http.ResponseWriter, r *http.Request) {
 		authr := rauth(r)
 

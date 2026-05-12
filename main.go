@@ -63,9 +63,18 @@ func Run(ctx context.Context, grp *errgroup.Group) error {
 		return fmt.Errorf("opening static files: %w", err)
 	}
 
+	Adapt, err := handler.NewAdapter(ctx, static)
+	if err != nil {
+		return fmt.Errorf("initializing adapter: %w", err)
+	}
+
 	mux := http.NewServeMux()
 	mw := middleware.From(middleware.Logging, middleware.Recover(), middleware.CORS(cfg.CORSOrigins))
 	mux.Handle("/~/", middleware.Apply(http.FileServerFS(static.FS()), mw, middleware.StripPrefix("/~/")))
+
+	if cfg.Development {
+		mux.Handle("GET /test", middleware.Apply(Adapt(handler.Test()), mw))
+	}
 
 	mw = middleware.From(mw, middleware.RateLimit(2, 8))
 	mux.Handle("/", middleware.Apply(http.RedirectHandler("/form", http.StatusFound), mw))

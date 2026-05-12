@@ -4,11 +4,11 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"merceria/internal/auth"
@@ -18,42 +18,168 @@ import (
 	"merceria/internal/util"
 )
 
-func ShittyFsNotify(ctx context.Context, fs *os.Root, name string) <-chan struct{} {
-	ch := make(chan struct{})
-	go func() {
-		prev, _ := fs.Stat(name)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(200 * time.Millisecond):
-			}
-
-			next, _ := fs.Stat(name)
-			if next.ModTime() != prev.ModTime() {
-				prev = next
-				ch <- struct{}{}
-			}
-		}
-	}()
-	return ch
+func extractIndexAndField(key string) (indexStr, fieldName string, ok bool) {
+	if !strings.HasPrefix(key, "data[") {
+		return
+	}
+	bracketAt := strings.Index(key, "]@")
+	if bracketAt == -1 {
+		return
+	}
+	indexStr = key[5:bracketAt]
+	fieldName = key[bracketAt+2:]
+	if indexStr == "" || fieldName == "" {
+		return "", "", false
+	}
+	ok = true
+	return
 }
 
-func ReloadingFile(ctx context.Context, fs *os.Root, name string) func() (data []byte, err error) {
-	data, err := fs.ReadFile(name)
-	go func() {
-		for range ShittyFsNotify(ctx, fs, name) {
-			log.Printf("%s changed, reloading", name)
-			data, err = fs.ReadFile(name)
-		}
-	}()
+func parseForm(r *http.Request) ([]model.Row, error) {
+	entries := map[string]map[string]string{}
+	hasArrayMode := false
 
-	return func() ([]byte, error) { return data, err }
+	for key, values := range r.Form {
+		if idx, field, ok := extractIndexAndField(key); ok {
+			hasArrayMode = true
+			if entries[idx] == nil {
+				entries[idx] = map[string]string{}
+			}
+			entries[idx][field] = values[0]
+		}
+	}
+
+	if hasArrayMode {
+		return parseArrayMode(entries)
+	}
+	return parseSingleMode(r)
+}
+
+func parseArrayMode(entries map[string]map[string]string) ([]model.Row, error) {
+	indices := make([]string, 0, len(entries))
+	for idx := range entries {
+		indices = append(indices, idx)
+	}
+	sortStrings(indices)
+
+	rows := make([]model.Row, 0, len(indices))
+	for _, idx := range indices {
+		fields := entries[idx]
+		row, err := buildRowFromFields(fields, idx)
+		if err != nil {
+			return nil, err
+		}
+		rows = append(rows, row)
+	}
+	return rows, nil
+}
+
+func parseSingleMode(r *http.Request) ([]model.Row, error) {
+	fields := map[string]string{
+		"fecha":    r.FormValue("fecha"),
+		"nombre":   r.FormValue("nombre"),
+		"telefono": r.FormValue("telefono"),
+		"prendas":  r.FormValue("prendas"),
+		"notas":    r.FormValue("notas"),
+		"grupo":    r.FormValue("grupo"),
+		"estado":   r.FormValue("estado"),
+	}
+	row, err := buildRowFromFields(fields, "")
+	if err != nil {
+		return nil, err
+	}
+	return []model.Row{row}, nil
+}
+
+func buildRowFromFields(fields map[string]string, indexInfo string) (model.Row, error) {
+	var row model.Row
+
+	nombre := fields["nombre"]
+	fecha := fields["fecha"]
+
+	if nombre == "" || fecha == "" {
+		msg := "Nombre y Fecha son campos requeridos"
+		if indexInfo != "" {
+			msg += fmt.Sprintf(" at index %s", indexInfo)
+		}
+		return row, fmt.Errorf("%s", msg)
+	}
+
+	if fecha != "" {
+		parsed, err := time.Parse("2006-01-02", fecha)
+		if err != nil {
+			msg := "Formato de fecha inválido, use YYYY-MM-DD"
+			if indexInfo != "" {
+				msg += fmt.Sprintf(" at index %s", indexInfo)
+			}
+			return row, fmt.Errorf("%s", msg)
+		}
+		row.CreatedAt = parsed
+	}
+
+	prendas := fields["prendas"]
+	if prendas != "" {
+		amount, err := strconv.Atoi(prendas)
+		if err != nil {
+			msg := "Prendas debe ser un número"
+			if indexInfo != "" {
+				msg += fmt.Sprintf(" at index %s", indexInfo)
+			}
+			return row, fmt.Errorf("%s", msg)
+		}
+		row.Amount = amount
+	}
+
+	grupo := fields["grupo"]
+	validTags := map[string]bool{
+		"Grupo 1": true,
+		"Grupo 2": true,
+		"Grupo 3": true,
+	}
+	if !validTags[grupo] {
+		msg := "Grupo inválido, debe ser 'Grupo 1', 'Grupo 2' o 'Grupo 3'"
+		if indexInfo != "" {
+			msg += fmt.Sprintf(" at index %s", indexInfo)
+		}
+		return row, fmt.Errorf("%s", msg)
+	}
+
+	estado := fields["estado"]
+	if estado != "TRUE" && estado != "FALSE" {
+		msg := "Estado inválido, debe ser 'TRUE' o 'FALSE'"
+		if indexInfo != "" {
+			msg += fmt.Sprintf(" at index %s", indexInfo)
+		}
+		return row, fmt.Errorf("%s", msg)
+	}
+
+	b := make([]byte, 1)
+	rand.Read(b)
+	orderId := row.CreatedAt.Format("20060102-") + fmt.Sprintf("%X", b)
+
+	row.OrderId = orderId
+	row.Name = nombre
+	row.Phone = fields["telefono"]
+	row.Notes = fields["notas"]
+	row.Tag = grupo
+	row.Status = estado == "TRUE"
+
+	return row, nil
+}
+
+func sortStrings(arr []string) {
+	for i := 0; i < len(arr)-1; i++ {
+		for j := i + 1; j < len(arr); j++ {
+			if arr[i] > arr[j] {
+				arr[i], arr[j] = arr[j], arr[i]
+			}
+		}
+	}
 }
 
 func CreateRowForm(ctx context.Context, fs *os.Root) http.HandlerFunc {
 	const name = "form.html"
-	data := ReloadingFile(ctx, fs, name)
+	data := util.ReloadingFile(ctx, fs, name)
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -63,6 +189,7 @@ func CreateRowForm(ctx context.Context, fs *os.Root) http.HandlerFunc {
 
 func CreateRow(svc *spreadsheets.Service) http.HandlerFunc {
 
+	// TODO: Deduplicate requests by FORM key
 	return func(w http.ResponseWriter, r *http.Request) {
 		FormError := func(msg string) {
 			http.Redirect(w, r, "/form?error="+url.QueryEscape(msg), http.StatusSeeOther)
@@ -76,67 +203,14 @@ func CreateRow(svc *spreadsheets.Service) http.HandlerFunc {
 			return
 		}
 
-		fecha := r.FormValue("fecha")
-		nombre := r.FormValue("nombre")
-		telefono := r.FormValue("telefono")
-		prendas := r.FormValue("prendas")
-		notas := r.FormValue("notas")
-		grupo := r.FormValue("grupo")
-		estado := r.FormValue("estado")
-
-		if nombre == "" || fecha == "" {
-			FormError("Nombre y Fecha son campos requeridos")
+		rows, err := parseForm(r)
+		if err != nil {
+			FormError(err.Error())
 			return
-		}
-
-		var createdAt time.Time
-		if fecha != "" {
-			parsed, err := time.Parse("2006-01-02", fecha)
-			if err != nil {
-				FormError("Formato de fecha inválido, use YYYY-MM-DD")
-				return
-			}
-			createdAt = parsed
-		}
-
-		amount, err := strconv.Atoi(prendas)
-		if err != nil && prendas != "" {
-			FormError("Prendas debe ser un número")
-			return
-		}
-
-		validTags := map[string]bool{
-			"Grupo 1": true,
-			"Grupo 2": true,
-			"Grupo 3": true,
-		}
-		if !validTags[grupo] {
-			FormError("Grupo inválido, debe ser 'Grupo 1', 'Grupo 2' o 'Grupo 3'")
-			return
-		}
-
-		if estado != "TRUE" && estado != "FALSE" {
-			FormError("Estado inválido, debe ser 'TRUE' o 'FALSE'")
-			return
-		}
-
-		b := make([]byte, 1)
-		rand.Read(b)
-		orderId := createdAt.Format("20060102-") + fmt.Sprintf("%X", b)
-
-		row := model.Row{
-			OrderId:   orderId,
-			CreatedAt: createdAt,
-			Name:      nombre,
-			Phone:     telefono,
-			Amount:    amount,
-			Notes:     notas,
-			Tag:       grupo,
-			Status:    estado == "TRUE",
 		}
 
 		ctx := r.Context()
-		err = operator.Insert(ctx, []model.Row{row})
+		err = operator.Insert(ctx, rows)
 		if err != nil {
 			fmt.Printf("failed to insert row: %v\n", err)
 			http.Error(w, "failed to create row", http.StatusInternalServerError)

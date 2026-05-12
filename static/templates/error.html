@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <title>{{ .Title }}</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    <link href="/~/common.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        {{ if or .Code .Title -}}
+        <h1>
+            {{ if .Code -}} <code>{{ .Code }}</code> {{- end }}
+            {{ if and .Code .Title }} | {{ end }}
+            {{ if .Title -}} <span class="title">{{ .Title }}</span> {{- end }}
+        </h1>
+        {{- end }}
+        {{ if .Message -}} <h3 class="message">{{ .Message }}</h3> {{- end }}
+        {{ if .Inner -}} <p class="error">{{ .Inner }}</p> {{- end }}
+    </div>
+</body>
+
+<style>
+    :root {
+        --bg: #fff;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg: #000;
+        }
+    }
+
+    div.container {
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 1rem;
+
+        margin: 2rem;
+        background-color: rgba(255, 255, 255, 0.9);
+
+        @media (prefers-color-scheme: dark) {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        @media only screen and (max-width: 720px) {
+            margin: 0rem;
+            padding: 1rem;
+        }
+    }
+
+    body {
+        background-image: url('/~/img/bg.png');
+        background-color: var(--bg);
+    }
+
+    span.title {
+        text-transform: capitalize;
+    }
+
+    .message {
+        &::first-letter {
+            text-transform: capitalize;
+        }
+    }
+
+    .error {
+        font-style: italic;
+    }
+</style>
+
+</html>
