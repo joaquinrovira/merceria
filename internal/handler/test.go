@@ -2,12 +2,12 @@ package handler
 
 import (
 	"fmt"
-	apperr "merceria/internal/model/error"
+	"merceria/internal/model/apperr"
 	"net/http"
 )
 
-func Test() Handler {
-	return func(r *http.Request) (func(w http.ResponseWriter), error) {
-		return nil, apperr.WithPublic(fmt.Errorf("this is a test"))
+func Test() HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		return apperr.WithPublic(fmt.Errorf("this is a test"))
 	}
 }

@@ -14,9 +14,10 @@ import (
 	"merceria/internal/auth"
 	"merceria/internal/middleware"
 	"merceria/internal/model"
+	"merceria/internal/model/apperr"
 	"merceria/internal/spreadsheets"
 	"merceria/internal/util"
-	"merceria/internal/util/cache"
+	"merceria/internal/util/once"
 )
 
 func extractIndexAndField(key string) (indexStr, fieldName string, ok bool) {
@@ -188,47 +189,50 @@ func CreateRowForm(ctx context.Context, fs *os.Root) http.HandlerFunc {
 	}
 }
 
-func CreateRow(svc *spreadsheets.Service) http.HandlerFunc {
-	nonces := cache.New(
-		cache.WithCapacity[string, bool](100),
-		cache.WithTTL[string, bool](1*time.Minute),
-	)
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		FormError := func(msg string) {
+func CreateRow(ctx context.Context, svc *spreadsheets.Service) HandlerFunc {
+	oncer := once.New(ctx, 5*time.Minute)
+	FormError := func(msg string) error {
+		return apperr.WithOverride(nil, func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/form?error="+url.QueryEscape(msg), http.StatusSeeOther)
-		}
+		})
+	}
 
-		claims := r.Context().Value(middleware.JwtClaims).(*auth.SessionClaims)
+	return func(w http.ResponseWriter, r *http.Request) error {
+		ctx := r.Context()
+
+		claims := ctx.Value(middleware.JwtClaims).(*auth.SessionClaims)
 		operator := util.Must(svc.GetOperator(claims.SpreadsheetId))
 
 		if err := r.ParseForm(); err != nil {
-			http.Error(w, "invalid form data", http.StatusBadRequest)
-			return
+			err = apperr.WithStatus(err, http.StatusBadRequest)
+			err = apperr.WithCode(err, "BAD_FORM")
+			err = apperr.WithMessage(err, "invalid form data")
+			return err
 		}
 
 		nonce := r.FormValue("nonce")
-		if nonces.Has(nonce) {
-			FormError("Duplicate submission detected. Please try again.")
-			return
-		}
+		return oncer.Resolve(nonce, func() once.Result {
+			rows, err := parseForm(r)
+			if err != nil {
+				return func(w http.ResponseWriter, r *http.Request) error {
+					return FormError(err.Error())
+				}
+			}
 
-		rows, err := parseForm(r)
-		if err != nil {
-			FormError(err.Error())
-			return
-		}
-
-		ctx := r.Context()
-		err = operator.Insert(ctx, rows)
-		if err != nil {
-			fmt.Printf("failed to insert row: %v\n", err)
-			http.Error(w, "failed to create row", http.StatusInternalServerError)
-			return
-		}
-		nonces.Set(nonce, true, cache.DefaultTTL)
-
-		location := r.URL.RequestURI()
-		http.Redirect(w, r, location+"?success=true", http.StatusFound)
+			err = operator.Insert(ctx, rows)
+			if err != nil {
+				err = apperr.WithStatus(err, http.StatusInternalServerError)
+				err = apperr.WithCode(err, "INSERT_FAIL")
+				err = apperr.WithMessage(err, "unable to insert data")
+				return func(w http.ResponseWriter, r *http.Request) error {
+					return err
+				}
+			}
+			return func(w http.ResponseWriter, r *http.Request) error {
+				location := r.URL.RequestURI()
+				http.Redirect(w, r, location+"?success=true", http.StatusFound)
+				return nil
+			}
+		})(w, r)
 	}
 }

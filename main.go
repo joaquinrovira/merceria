@@ -63,9 +63,10 @@ func Run(ctx context.Context, grp *errgroup.Group) error {
 		return fmt.Errorf("opening static files: %w", err)
 	}
 
-	Adapt, err := handler.NewAdapter(ctx, static)
+	RenderErr, err := handler.NewErrorRenderer(ctx, static, "templates/error.html")
+	Adapt := handler.Adapter(RenderErr)
 	if err != nil {
-		return fmt.Errorf("initializing adapter: %w", err)
+		return fmt.Errorf("initializing error renderer: %w", err)
 	}
 
 	mux := http.NewServeMux()
@@ -92,7 +93,7 @@ func Run(ctx context.Context, grp *errgroup.Group) error {
 
 	mw = middleware.From(mw, middleware.WithSpreadsheetId(rauth))
 	mux.Handle("GET /form", middleware.Apply(handler.CreateRowForm(ctx, static), mw))
-	mux.Handle("POST /form", middleware.Apply(handler.CreateRow(spreadsheets), mw))
+	mux.Handle("POST /form", middleware.Apply(Adapt(handler.CreateRow(ctx, spreadsheets)), mw))
 
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,

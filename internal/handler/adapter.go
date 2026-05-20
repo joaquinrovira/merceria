@@ -5,39 +5,29 @@ import (
 	"fmt"
 	"html/template"
 	"log"
-	apperr "merceria/internal/model/error"
+	"merceria/internal/model/apperr"
 	"merceria/internal/util"
 	"net/http"
 	"os"
 )
 
-type Handler func(r *http.Request) (func(w http.ResponseWriter), error)
+type HandlerFunc = func(w http.ResponseWriter, r *http.Request) error
 
-func NewAdapter(ctx context.Context, fs *os.Root) (func(h Handler) http.HandlerFunc, error) {
-	const name = "templates/error.html"
-	Render, err := ErrorRenderer(ctx, fs, name)
-	if err != nil {
-		return nil, fmt.Errorf("building error renderer: %w", err)
-	}
-
-	return func(h Handler) http.HandlerFunc {
+func Adapter(Err ErrorRenderer) func(fn HandlerFunc) http.HandlerFunc {
+	return func(fn HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			Success, err := h(r)
-			if err == nil && Success == nil {
-				err = fmt.Errorf("path: %s", r.URL.String())
-				err = apperr.WithCode(err, "EMTPY_SUCCESS")
-				err = apperr.WithMessage(err, "the received handler returned an empty success")
-			}
+			err := fn(w, r)
 			if err != nil {
-				Render(w, err)
+				Err(w, r, err)
 				return
 			}
-			Success(w)
 		}
-	}, nil
+	}
 }
 
-func ErrorRenderer(ctx context.Context, fs *os.Root, path string) (func(w http.ResponseWriter, err error), error) {
+type ErrorRenderer = func(w http.ResponseWriter, r *http.Request, err error)
+
+func NewErrorRenderer(ctx context.Context, fs *os.Root, path string) (ErrorRenderer, error) {
 	Load := func() (*template.Template, error) {
 		data, err := fs.ReadFile(path)
 		if err != nil {
@@ -66,7 +56,12 @@ func ErrorRenderer(ctx context.Context, fs *os.Root, path string) (func(w http.R
 		}
 	}()
 
-	return func(w http.ResponseWriter, err error) {
+	return func(w http.ResponseWriter, r *http.Request, err error) {
+		if fn := apperr.Override(err); fn != nil {
+			fn(w, r)
+			return
+		}
+
 		type DetailedError struct {
 			Code    string
 			Title   string
