@@ -191,17 +191,24 @@ func CreateRowForm(ctx context.Context, fs *os.Root) http.HandlerFunc {
 
 func CreateRow(ctx context.Context, svc *spreadsheets.Service) HandlerFunc {
 	oncer := once.New(ctx, 5*time.Minute)
-	FormError := func(msg string) error {
-		return apperr.WithOverride(nil, func(w http.ResponseWriter, r *http.Request) {
+	FormError := func(msg string) func(w http.ResponseWriter, r *http.Request) error {
+		return func(w http.ResponseWriter, r *http.Request) error {
 			http.Redirect(w, r, "/form?error="+url.QueryEscape(msg), http.StatusSeeOther)
-		})
+			return nil
+		}
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 
 		claims := ctx.Value(middleware.JwtClaims).(*auth.SessionClaims)
-		operator := util.Must(svc.GetOperator(claims.SpreadsheetId))
+		operator, err := svc.GetOperator(claims.SpreadsheetId)
+		if err != nil {
+			err = apperr.WithStatus(err, http.StatusFailedDependency)
+			err = apperr.WithCode(err, "OPERATOR_FAILURE")
+			err = apperr.WithMessage(err, "unable to retrieve operator")
+			return apperr.Public(err)
+		}
 
 		if err := r.ParseForm(); err != nil {
 			err = apperr.WithStatus(err, http.StatusBadRequest)
@@ -214,9 +221,7 @@ func CreateRow(ctx context.Context, svc *spreadsheets.Service) HandlerFunc {
 		return oncer.Resolve(nonce, func() once.Result {
 			rows, err := parseForm(r)
 			if err != nil {
-				return func(w http.ResponseWriter, r *http.Request) error {
-					return FormError(err.Error())
-				}
+				return FormError(err.Error())
 			}
 
 			err = operator.Insert(ctx, rows)

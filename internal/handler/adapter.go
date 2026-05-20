@@ -57,11 +57,6 @@ func NewErrorRenderer(ctx context.Context, fs *os.Root, path string) (ErrorRende
 	}()
 
 	return func(w http.ResponseWriter, r *http.Request, err error) {
-		if fn := apperr.Override(err); fn != nil {
-			fn(w, r)
-			return
-		}
-
 		type DetailedError struct {
 			Code    string
 			Title   string
